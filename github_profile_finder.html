@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub Profile Finder</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background-color: #0d1117; /* GitHub dark background */
+      color: #c9d1d9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      color: #58a6ff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .search-box {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 1px solid #30363d;
+      border-right: none;
+      border-radius: 8px 0 0 8px;
+      background-color: #161b22;
+      color: #c9d1d9;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    button {
+      background-color: #238636; /* GitHub green */
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #2ea043;
+    }
+
+    .profile {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+
+    .avatar {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      margin-bottom: 15px;
+      border: 3px solid #58a6ff;
+    }
+
+    .username {
+      color: #58a6ff;
+      font-size: 1.2rem;
+      text-decoration: none;
+    }
+
+    .bio {
+      margin: 10px 0;
+      color: #8b949e;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 15px 0;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .repos {
+      margin-top: 20px;
+      text-align: left;
+    }
+
+    .repo {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .repo a {
+      color: #58a6ff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .error {
+      color: #ff5555;
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐙 GitHub Profile Finder</h1>
+
+  <div class="search-box">
+    <input type="text" id="username" placeholder="Enter GitHub username..." />
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <div id="profileContainer"></div>
+
+  <script>
+    const searchBtn = document.getElementById("searchBtn");
+    const usernameInput = document.getElementById("username");
+    const profileContainer = document.getElementById("profileContainer");
+
+    async function getUserProfile(username) {
+      try {
+        // Fetch GitHub user data
+        const userResponse = await fetch(`https://api.github.com/users/${username}`);
+        if (!userResponse.ok) throw new Error("User not found");
+        const userData = await userResponse.json();
+
+        // Fetch latest repos (5)
+        const repoResponse = await fetch(`https://api.github.com/users/${username}/repos?sort=created&per_page=5`);
+        const repos = await repoResponse.json();
+
+        displayProfile(userData, repos);
+      } catch (error) {
+        profileContainer.innerHTML = `<p class="error">❌ ${error.message}</p>`;
+      }
+    }
+
+    function displayProfile(user, repos) {
+      profileContainer.innerHTML = `
+        <div class="profile">
+          <img src="${user.avatar_url}" alt="${user.login}" class="avatar" />
+          <h2><a class="username" href="${user.html_url}" target="_blank">@${user.login}</a></h2>
+          <p class="bio">${user.bio ? user.bio : "No bio available"}</p>
+          <div class="stats">
+            <div class="stat"><strong>${user.followers}</strong><br>Followers</div>
+            <div class="stat"><strong>${user.following}</strong><br>Following</div>
+            <div class="stat"><strong>${user.public_repos}</strong><br>Repos</div>
+          </div>
+          <div class="repos">
+            <h3>📂 Latest Repositories</h3>
+            ${
+              repos.length
+                ? repos.map(repo => `
+                    <div class="repo">
+                      <a href="${repo.html_url}" target="_blank">${repo.name}</a><br>
+                      <small>${repo.description ? repo.description : "No description"}</small>
+                    </div>
+                  `).join("")
+                : "<p>No repositories found.</p>"
+            }
+          </div>
+        </div>
+      `;
+    }
+
+    // Search button click
+    searchBtn.addEventListener("click", () => {
+      const username = usernameInput.value.trim();
+      if (username) {
+        getUserProfile(username);
+      } else {
+        profileContainer.innerHTML = `<p class="error">⚠️ Please enter a username.</p>`;
+      }
+    });
+
+    // Press Enter key
+    usernameInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") {
+        const username = usernameInput.value.trim();
+        if (username) getUserProfile(username);
+      }
+    });
+  </script>
+</body>
+</html>
